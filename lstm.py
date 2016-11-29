@@ -3,6 +3,7 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.python.framework import dtypes
 from tensorflow.contrib import learn
+from tensorflow.contrib import layers as tflayers
 
 def x_sin(x):
     return x * np.sin(x)
@@ -64,6 +65,19 @@ def load_csvdata(rawdata, time_steps, seperate=False):
     train_y, val_y, test_y = prepare_data(data['b'] if seperate else data, time_steps, labels=True)
     return dict(train=train_x, val=val_x, test=test_x), dict(train=train_y, val=val_y, test=test_y)
 
+def load_csvdata_xy(rawdata_X, rawdata_y, time_steps, val_size=0.1, test_size=0.1):
+    dataX = rawdata_X
+    if not isinstance(dataX, pd.DataFrame):
+        dataX = pd.DataFrame(dataX)
+    dataY = rawdata_y
+    if not isinstance(dataY, pd.DataFrame):
+        dataY = pd.DataFrame(dataY)
+
+    #print(data)
+    train_x, val_x, test_x = prepare_data(dataX, time_steps, val_size=val_size, test_size=test_size)
+    train_y, val_y, test_y = prepare_data(dataY, time_steps, labels=True, val_size=val_size, test_size=test_size)
+    return dict(train=train_x, val=val_x, test=test_x), dict(train=train_y, val=val_y, test=test_y)
+
 def generate_data(fct, x, time_steps, seperate=False):
     """generates data with based on a function fct"""
     data = fct(x)
@@ -99,12 +113,17 @@ def lstm_model(num_units, rnn_layers, dense_layers=None, learning_rate=0.1, opti
 
     def dnn_layers(input_layers, layers):
         if layers and isinstance(layers, dict):
-            return learn.ops.dnn(input_layers,
+# r0.11                     return tflayers.stack(input_layers, tflayers.fully_connected,
+# r0.10                        return learn.ops.dnn(input_layers,
+            return tflayers.stack(input_layers, tflayers.fully_connected,
                                  layers['layers'],
                                  activation=layers.get('activation'),
                                  dropout=layers.get('dropout'))
         elif layers:
-            return learn.ops.dnn(input_layers, layers)
+
+# r0.10            return learn.ops.dnn(input_layers, layers)
+# r0.11            return tflayers.stack(input_layers, tflayers.fully_connected, layers)
+            return tflayers.stack(input_layers, tflayers.fully_connected, layers)
         else:
             return input_layers
 
