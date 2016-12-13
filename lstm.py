@@ -74,7 +74,7 @@ def load_csvdata_xy(rawdata_X, rawdata_y, time_steps, val_size=0.1, test_size=0.
         dataY = pd.DataFrame(dataY)
 
     #print(data)
-    train_x, val_x, test_x = prepare_data(dataX, time_steps, val_size=val_size, test_size=test_size)
+    train_x, val_x, test_x = prepare_data(dataX, time_steps, labels=False, val_size=val_size, test_size=test_size)
     train_y, val_y, test_y = prepare_data(dataY, time_steps, labels=True, val_size=val_size, test_size=test_size)
     return dict(train=train_x, val=val_x, test=test_x), dict(train=train_y, val=val_y, test=test_y)
 
