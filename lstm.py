@@ -24,9 +24,9 @@ def rnn_data(data, time_steps, labels=False):
     for i in range(len(data) - time_steps):
         if labels:
             try:
-                rnn_df.append(data.iloc[i + time_steps].as_matrix())
+                rnn_df.append(data.iloc[i + time_steps -1 ].as_matrix())
             except AttributeError:
-                rnn_df.append(data.iloc[i + time_steps])
+                rnn_df.append(data.iloc[i + time_steps -1 ])
         else:
             data_ = data.iloc[i: i + time_steps].as_matrix()
             rnn_df.append(data_ if len(data_.shape) > 1 else [[i] for i in data_])
