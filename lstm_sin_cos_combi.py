@@ -12,14 +12,15 @@ import os
 import shutil
 import math
 import random
+import cpickle as pickle
 
 # When you change network parameters, Do rm -rf ops_logs/*
 LOG_DIR = './ops_logs/lstm_sin_cos_combi'
-TIMESTEPS = 10
+TIMESTEPS = 15
 #RNN_LAYERS = [{'num_units': 5}]
-#DENSE_LAYERS = [10, 10]
-RNN_LAYERS = [{'num_units': 10}] #, {'num_units': 2}]
-DENSE_LAYERS = None #[ 2, 2 ] #None #[30]
+DENSE_LAYERS = [10, 10]
+RNN_LAYERS = [{'num_units': 15}] #, {'num_units': 2}]
+# DENSE_LAYERS = None #[ 2, 2 ] #None #[30]
 TRAINING_STEPS = 100000 #3200000
 BATCH_SIZE = 100
 PRINT_STEPS = 365
@@ -31,35 +32,51 @@ except OSError:
 	pass
 
 def generate_sin_cos_combi_data( max, nstep ):
-    # data_X[t][0] = sin(t)
-    # data_X[t][1] = cos(2*t)
-    # data_Y[t] = sin(t) * cos(2*t)
+		# data_X[t][0] = sin(t)
+		# data_X[t][1] = cos(2*t)
+		# data_Y[t] = sin(t) * cos(2*t)
 
-    t = np.linspace(0, max, nstep, dtype=np.float32)
-    #x1 = [ (i%5)*0.1 for i in xrange(nstep) ]
-    #x1 = [random.uniform(0.0, 1.0))) for i in xrange(nstep)]
-    x1 = np.sin(t)
-    x2 = np.cos(2*t)
-    y =  x1 * x2
+		t = np.linspace(0, max, nstep, dtype=np.float32)
+		#x1 = [ (i%5)*0.1 for i in xrange(nstep) ]
+		#x1 = [random.uniform(0.0, 1.0))) for i in xrange(nstep)]
+		x1 = np.sin(t)
+		x2 = np.cos(2*t)
+		y =  x1 * x2
 
-    #X = x1
-    X = np.column_stack((x1,x2)) # pack
-    return pd.DataFrame(X), pd.DataFrame(y)
+		#X = x1
+		X = np.column_stack((x1,x2)) # pack
+		return pd.DataFrame(X), pd.DataFrame(y)
 
-data_X, data_y = generate_sin_cos_combi_data(40*math.pi, 5000)  # max, num_steps
-X, y = load_csvdata_xy(data_X, data_y, TIMESTEPS, val_size=0.01, test_size=0.10)
+#data_X, data_y = generate_sin_cos_combi_data(40*math.pi, 5000)  # max, num_steps
+#X, y = load_csvdata_xy(data_X, data_y, TIMESTEPS, val_size=0.01, test_size=0.10)
+
+
+tmp = pickle.load(open('data.pkl','r'))
+data = list()
+
+for year in tmp:
+		for item in data[year]:
+			try:
+					data.append(float(item[5]))
+			except Exception,x:
+					pass
+
+
+X, y = generate_data(data, TIMESTEPS, seperate=False)
+
 
 regressor = learn.Estimator(model_fn=lstm_model(TIMESTEPS, RNN_LAYERS, DENSE_LAYERS),
-                           model_dir=LOG_DIR)
+													 model_dir=LOG_DIR)
+
 
 # create a lstm instance and validation monitor
 validation_monitor = learn.monitors.ValidationMonitor(X['val'], y['val'],
-                                                     every_n_steps=PRINT_STEPS,
-                                                     early_stopping_rounds=10000)
+																										 every_n_steps=PRINT_STEPS,
+																										 early_stopping_rounds=1000)
 regressor.fit(X['train'], y['train'],
-              monitors=[validation_monitor],
-              batch_size=BATCH_SIZE,
-              steps=TRAINING_STEPS)
+							monitors=[validation_monitor],
+							batch_size=BATCH_SIZE,
+							steps=TRAINING_STEPS)
 
 
 predicted = regressor.predict(X['test'])
